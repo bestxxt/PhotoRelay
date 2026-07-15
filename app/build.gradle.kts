@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.photorelay"
+    namespace = "io.github.bestxxt.photorelay"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.photorelay"
+        applicationId = "io.github.bestxxt.photorelay"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
