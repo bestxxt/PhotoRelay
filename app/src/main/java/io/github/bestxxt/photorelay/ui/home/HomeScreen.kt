@@ -36,6 +36,8 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val syncRecords by viewModel.syncRecords.collectAsStateWithLifecycle()
     val savedKeepDays by viewModel.keepDays.collectAsStateWithLifecycle()
+    val homeDateSelection by viewModel.homeDateSelection.collectAsStateWithLifecycle()
+    val homeSizeSelection by viewModel.homeSizeSelection.collectAsStateWithLifecycle()
     
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(SyncTab.UNSYNCED) }
@@ -43,14 +45,22 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
     var currentTakenAfter by remember { mutableStateOf<String?>(null) }
     var currentSize by remember { mutableStateOf(10000) }
 
-    LaunchedEffect(uiState) {
+    LaunchedEffect(uiState, homeDateSelection, homeSizeSelection) {
         val state = uiState
         if (state is HomeUiState.Idle) {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val today = System.currentTimeMillis()
-            val dayMillis = 24L * 60 * 60 * 1000
-            val targetDate = sdf.format(Date(today - 7 * dayMillis))
-            viewModel.fetchAssets(targetDate, 10000)
+            val size = homeSizeSelection
+            var targetDate: String? = null
+            
+            if (homeDateSelection.startsWith("date:")) {
+                targetDate = homeDateSelection.removePrefix("date:")
+            } else {
+                val days = homeDateSelection.removeSuffix("d").toIntOrNull() ?: 7
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val today = System.currentTimeMillis()
+                val dayMillis = 24L * 60 * 60 * 1000
+                targetDate = sdf.format(Date(today - days * dayMillis))
+            }
+            viewModel.fetchAssets(targetDate, size)
         } else if (state is HomeUiState.Success) {
             currentTakenAfter = state.takenAfter
             currentSize = state.fetchSize
@@ -106,10 +116,13 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
             
             presetDays.forEachIndexed { index, days ->
                 val targetDate = sdf.format(Date(today - days * dayMillis))
-                val isSelected = currentTakenAfter == targetDate || (currentTakenAfter == null && days == 7)
+                val isSelected = homeDateSelection == "${days}d"
                 SegmentedButton(
                     selected = isSelected,
-                    onClick = { viewModel.fetchAssets(targetDate, currentSize) },
+                    onClick = { 
+                        viewModel.saveHomeSelections("${days}d", currentSize)
+                        viewModel.fetchAssets(targetDate, currentSize) 
+                    },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = presetDays.size + 1)
                 ) {
                     Text("${days}d")
@@ -117,14 +130,14 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
             }
             
             // "Select Date" Segment
-            val isCustomDate = currentTakenAfter != null && !presetDays.any { sdf.format(Date(today - it * dayMillis)) == currentTakenAfter }
+            val isCustomDate = homeDateSelection.startsWith("date:")
             SegmentedButton(
                 selected = isCustomDate,
                 onClick = { showDatePicker = true },
                 shape = SegmentedButtonDefaults.itemShape(index = presetDays.size, count = presetDays.size + 1)
             ) {
-                val customDate = if (isCustomDate) currentTakenAfter?.takeLast(5) else "Date"
-                Text(customDate ?: "Date") 
+                val customDate = if (isCustomDate) homeDateSelection.removePrefix("date:").takeLast(5) else "Date"
+                Text(customDate) 
             }
         }
 
@@ -138,8 +151,11 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
         ) {
             sizes.forEachIndexed { index, size ->
                 SegmentedButton(
-                    selected = currentSize == size,
-                    onClick = { viewModel.fetchAssets(currentTakenAfter, size) },
+                    selected = homeSizeSelection == size,
+                    onClick = { 
+                        viewModel.saveHomeSelections(homeDateSelection, size)
+                        viewModel.fetchAssets(currentTakenAfter, size) 
+                    },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = sizes.size)
                 ) {
                     Text(if (size == 10000) "Max" else size.toString())
@@ -291,6 +307,7 @@ fun HomeScreen(viewModel: HomeViewModel, onNavigateToSettings: () -> Unit, onLog
                         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                         val formattedDate = sdf.format(Date(dateMillis))
                         val currentSize = (uiState as? HomeUiState.Success)?.fetchSize ?: 50
+                        viewModel.saveHomeSelections("date:$formattedDate", currentSize)
                         viewModel.fetchAssets(formattedDate, currentSize)
                     }
                     showDatePicker = false

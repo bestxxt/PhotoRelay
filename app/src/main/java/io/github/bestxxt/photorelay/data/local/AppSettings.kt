@@ -28,6 +28,9 @@ class AppSettings(private val context: Context) {
         val SAVE_LOCATION = stringPreferencesKey("save_location")
         val APP_LOGS = stringPreferencesKey("app_logs")
         val LAST_EMAIL = stringPreferencesKey("last_email")
+        
+        val HOME_DATE_SELECTION = stringPreferencesKey("home_date_selection")
+        val HOME_SIZE_SELECTION = androidx.datastore.preferences.core.intPreferencesKey("home_size_selection")
     }
     
     private val gson = Gson()
@@ -76,6 +79,14 @@ class AppSettings(private val context: Context) {
     
     val saveLocation: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[SAVE_LOCATION] ?: "PhotoRelay"
+    }
+
+    val homeDateSelection: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[HOME_DATE_SELECTION] ?: "7d"
+    }
+    
+    val homeSizeSelection: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[HOME_SIZE_SELECTION] ?: 10000
     }
 
     val appLogs: Flow<List<String>> = context.dataStore.data.map { preferences ->
@@ -137,6 +148,18 @@ class AppSettings(private val context: Context) {
     suspend fun saveLocation(location: String) {
         context.dataStore.edit { preferences ->
             preferences[SAVE_LOCATION] = location
+        }
+    }
+
+    suspend fun saveHomeDateSelection(selection: String) {
+        context.dataStore.edit { preferences ->
+            preferences[HOME_DATE_SELECTION] = selection
+        }
+    }
+    
+    suspend fun saveHomeSizeSelection(size: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[HOME_SIZE_SELECTION] = size
         }
     }
 

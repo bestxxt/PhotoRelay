@@ -44,6 +44,12 @@ class HomeViewModel(
 
     private val _keepDays = MutableStateFlow<Int>(30)
     val keepDays: StateFlow<Int> = _keepDays.asStateFlow()
+    
+    private val _homeDateSelection = MutableStateFlow<String>("7d")
+    val homeDateSelection: StateFlow<String> = _homeDateSelection.asStateFlow()
+
+    private val _homeSizeSelection = MutableStateFlow<Int>(10000)
+    val homeSizeSelection: StateFlow<Int> = _homeSizeSelection.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -54,6 +60,16 @@ class HomeViewModel(
         viewModelScope.launch {
             appSettings.keepDays.collectLatest { days ->
                 _keepDays.value = days
+            }
+        }
+        viewModelScope.launch {
+            appSettings.homeDateSelection.collectLatest { selection ->
+                _homeDateSelection.value = selection
+            }
+        }
+        viewModelScope.launch {
+            appSettings.homeSizeSelection.collectLatest { size ->
+                _homeSizeSelection.value = size
             }
         }
     }
@@ -73,6 +89,13 @@ class HomeViewModel(
             } else {
                 _uiState.value = HomeUiState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
             }
+        }
+    }
+    
+    fun saveHomeSelections(dateSelection: String, sizeSelection: Int) {
+        viewModelScope.launch {
+            appSettings.saveHomeDateSelection(dateSelection)
+            appSettings.saveHomeSizeSelection(sizeSelection)
         }
     }
     
