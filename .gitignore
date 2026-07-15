@@ -15,7 +15,7 @@
 local.properties
 
 # Custom ignores
-Gemini_Generated_Image_*.png
+ai_assets/
 *.keystore
 *.jks
 keystore.properties
