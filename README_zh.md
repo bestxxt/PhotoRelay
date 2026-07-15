@@ -1,4 +1,8 @@
-# PhotoRelay 📸
+# PhotoRelay
+
+<p align="center">
+  <img src="assets/icon.png" width="128" />
+</p>
 
 [English Version](README.md)
 
